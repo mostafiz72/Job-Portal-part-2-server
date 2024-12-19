@@ -1,13 +1,19 @@
 require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const app = express();
 
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173'], /// ai api theke data asbe
+    credentials: true  // j kono jaiga theke data asle amra take access ditesi
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.eywn0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -30,7 +36,29 @@ async function run() {
 
         // jobs related apis
         const jobsCollection = client.db('jobPortal').collection('jobs');
-        // const jobApplicationCollection = client.db('jobPortal').collection('job_applications');
+        const jobApplicationCollection = client.db('jobPortal').collection('job_applications');
+
+        /// Jwt and Authorization and Api Authentication 
+
+        app.post('/jwt', (req, res)=>{  /// ai post jwt api k authProvider er mordhe theke calll kora hoyse
+            const user = req.body;
+            const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '5h' })  //// jwt.sign mane tader function er mardhome jwt create kora hoy... user-------> mane j sing up korbe se hobe ekjob user. R jodi keu admin hoy taile oi khane amara admin or etc bosaiya dibo. tarpor expireIn mane use er token kotokkhon thakbe
+            res.cookie("token", token,{
+                httpOnly: true,
+                secure: false
+            })
+            .send({success: true})   /// token ta jodi thik moto crate hoy taile amra font end a success ta dekhabo
+        })
+
+        /// logOut the user and clear the Cookies --------------
+
+        app.post('/logout', (req, res)=>{
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: false
+            })
+            .send({success: true})   /// jodi logout thik moto hoy taile success message dibe ----------------------------------
+        })
 
         // jobs related APIs
         app.get('/jobs', async (req, res) => {
