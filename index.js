@@ -9,7 +9,11 @@ const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(cors({
-    origin: ['http://localhost:5173'], /// ai api theke data asbe
+    origin: [
+        'http://localhost:5173',
+        'https://jobs-portal-7538e.web.app',
+        'https://jobs-portal-7538e.firebaseapp.com'
+    ], 
     credentials: true  // j kono jaiga theke data asle amra take access ditesi
 }));
 app.use(express.json());
@@ -52,9 +56,9 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         // jobs related apis
@@ -68,7 +72,8 @@ async function run() {
             const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '5h' })  //// jwt.sign mane tader function er mardhome jwt create kora hoy... user-------> mane j sing up korbe se hobe ekjob user. R jodi keu admin hoy taile oi khane amara admin or etc bosaiya dibo. tarpor expireIn mane use er token kotokkhon thakbe
             res.cookie("token", token,{
                 httpOnly: true,
-                secure: false
+                secure: process.env.NODE_ENV==='production',  // jodi production na hoy taile auto false hoye jabe
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
             })
             .send({success: true})   /// token ta jodi thik moto crate hoy taile amra font end a success ta dekhabo
         })
@@ -78,7 +83,8 @@ async function run() {
         app.post('/logout', (req, res)=>{
             res.clearCookie("token", {
                 httpOnly: true,
-                secure: false
+                secure: process.env.NODE_ENV==='production',  // jodi production na hoy taile auto false hoye jabe
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
             })
             .send({success: true})   /// jodi logout thik moto hoy taile success message dibe ----------------------------------
         })
