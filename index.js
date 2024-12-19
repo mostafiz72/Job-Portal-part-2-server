@@ -13,7 +13,29 @@ app.use(cors({
     credentials: true  // j kono jaiga theke data asle amra take access ditesi
 }));
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser());  /// atar jonno amara sob jaiga theke cookie access korete pertesi
+
+/// Create thek middleware and access the anything api this middleware ------------------------
+
+const verifyToken = (req, res, next)=>{
+    const token = req.cookies?.token;
+    console.log("Tumi tomar api theke ai token ta access korte perteso", token)
+
+    // token jodi na thake taile amra tare ekta error message dibo
+
+    if(!token){
+        return res.status(401).send({message: 'No token, authorization denied'});
+    }
+
+    // jodi token thake taile amra tare validations korbo -------------------
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded)=>{
+        if(err){
+            return res.status(401).send({message: 'Token is not valid'});
+        }
+    })
+    next();
+    
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.eywn0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -88,9 +110,12 @@ async function run() {
 
         // job application apis
         // get all data, get one data, get some data [o, 1, many]
-        app.get('/job-application', async (req, res) => {
+        app.get('/job-application',verifyToken, async (req, res) => {
             const email = req.query.email;
             const query = { applicant_email: email }
+
+            // console.log(req.cookies.token);
+            
             const result = await jobApplicationCollection.find(query).toArray();
 
             // fokira way to aggregate data
