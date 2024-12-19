@@ -32,6 +32,7 @@ const verifyToken = (req, res, next)=>{
         if(err){
             return res.status(401).send({message: 'Token is not valid'});
         }
+        req.user = decoded;   /// joto jaigei token ta //// verify tokan ta user kora hobe toot jaigei decoded ta use kora hobe......
     })
     next();
     
@@ -115,6 +116,10 @@ async function run() {
             const query = { applicant_email: email }
 
             // console.log(req.cookies.token);
+
+            if(req.user?.email !== req.query?.email){
+                return res.status(401).send({message: 'Unauthorized access'});
+            }
             
             const result = await jobApplicationCollection.find(query).toArray();
 
